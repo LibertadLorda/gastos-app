@@ -1,0 +1,314 @@
+import { useState } from "react";
+import { useExpenses } from "../hooks/useExpenses";
+import { useAuth } from "../hooks/useAuth";
+import { formatDate, formatSimpleDate } from "../utils/formatDate";
+
+const CATEGORIES = [
+  "Comida", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Otros"
+];
+
+function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
+  const [description, setDescription] = useState(initial?.description || "");
+  const [amount, setAmount] = useState(initial?.amount || "");
+  const [category, setCategory] = useState(initial?.category || "Otros");
+  const [isShared, setIsShared] = useState(initial?.isShared ?? true);
+  const [sharedWith, setSharedWith] = useState(
+    initial?.sharedWith || Object.keys(group.memberNames)
+  );
+  const [date, setDate] = useState(initial?.date || today);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const otherMembers = Object.entries(group.memberNames).filter(
+    ([uid]) => uid !== currentUser.uid
+  );
+
+  function toggleMember(uid) {
+    setSharedWith((prev) =>
+      prev.includes(uid) ? prev.filter((id) => id !== uid) : [...prev, uid]
+    );
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!description.trim() || !amount) return;
+    setSaving(true);
+    setError("");
+    try {
+      await onSave({ description, amount, category, isShared, sharedWith, date });
+    } catch {
+      setError("Error al guardar el gasto");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+            placeholder="Ej: Cena del viernes"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Importe (€)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              min="0.01"
+              step="0.01"
+              placeholder="0.00"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm bg-white"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Fecha</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            max={today}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="isShared"
+            checked={isShared}
+            onChange={(e) => {
+              setIsShared(e.target.checked);
+              if (e.target.checked) {
+                setSharedWith(Object.keys(group.memberNames));
+              } else {
+                setSharedWith([currentUser.uid]);
+              }
+            }}
+            className="w-4 h-4 accent-indigo-600"
+          />
+          <label htmlFor="isShared" className="text-sm text-gray-600">
+            Gasto compartido
+          </label>
+        </div>
+
+        {isShared && otherMembers.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Compartir con
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {otherMembers.map(([uid, name]) => (
+                <button
+                  key={uid}
+                  type="button"
+                  onClick={() => toggleMember(uid)}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                    sharedWith.includes(uid)
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-gray-500 border-gray-200"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
+          >
+            {saving ? "Guardando..." : "Guardar gasto"}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default function ExpenseTab({ group }) {
+  const { currentUser } = useAuth();
+  const { expenses, loading, addExpense, editExpense, deleteExpense } = useExpenses(group.id);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const today = new Date().toISOString().split("T")[0];
+
+  const filtered = expenses.filter((e) =>
+    e.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  async function handleAdd(data) {
+    await addExpense(data);
+    setShowForm(false);
+  }
+
+  async function handleEdit(expenseId, data) {
+    await editExpense(expenseId, data);
+    setEditingId(null);
+  }
+
+  async function handleDelete(expenseId) {
+    await deleteExpense(expenseId);
+    setConfirmDelete(null);
+  }
+
+  function getMemberName(uid) {
+    return group.memberNames[uid] || uid;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-semibold text-gray-700">Gastos</h3>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          >
+            + Añadir gasto
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <ExpenseForm
+          group={group}
+          currentUser={currentUser}
+          today={today}
+          onSave={handleAdd}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      <div>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar gasto..."
+          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+        />
+      </div>
+
+      {loading ? (
+        <p className="text-gray-400 text-sm">Cargando...</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-gray-400 text-sm italic">
+          {search ? "No hay resultados" : "No hay gastos todavía"}
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((expense) => (
+            <li key={expense.id}>
+              {editingId === expense.id ? (
+                <ExpenseForm
+                  group={group}
+                  currentUser={currentUser}
+                  today={today}
+                  initial={expense}
+                  onSave={(data) => handleEdit(expense.id, data)}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : (
+                <div className="p-4 rounded-xl border bg-white border-gray-100">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm">{expense.description}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {expense.paidByName} · {expense.category} ·{" "}
+                        {expense.date ? formatSimpleDate(expense.date) : formatDate(expense.createdAt)}
+                      </p>
+                      {expense.isShared && expense.sharedWith?.length > 0 && (
+                        <p className="text-xs text-indigo-400 mt-0.5">
+                          Compartido con{" "}
+                          {expense.sharedWith
+                            .filter((uid) => uid !== expense.paidBy)
+                            .map((uid) => getMemberName(uid))
+                            .join(", ")}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right ml-3 shrink-0">
+                      <p className="font-bold text-gray-800">{expense.amount.toFixed(2)}€</p>
+                      {expense.paidBy === currentUser.uid && (
+                        <div className="flex gap-2 justify-end mt-1">
+                          <button
+                            onClick={() => setEditingId(expense.id)}
+                            className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(expense.id)}
+                            className="text-xs text-red-400 hover:text-red-600 font-medium"
+                          >
+                            Borrar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {confirmDelete === expense.id && (
+                    <div className="mt-3 flex items-center gap-2 bg-red-50 rounded-lg px-3 py-2">
+                      <p className="text-xs text-red-600 flex-1">¿Seguro que quieres borrar este gasto?</p>
+                      <button
+                        onClick={() => handleDelete(expense.id)}
+                        className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Borrar
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(null)}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
