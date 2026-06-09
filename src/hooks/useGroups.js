@@ -8,6 +8,7 @@ import {
   doc,
   updateDoc,
   arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "./useAuth";
@@ -37,9 +38,10 @@ export function useGroups() {
     return unsubscribe;
   }, [currentUser]);
 
-  async function createGroup(name) {
+  async function createGroup(name, color) {
     await addDoc(collection(db, "groups"), {
       name,
+      color: color || "#4f46e5",
       createdBy: currentUser.uid,
       members: [currentUser.uid],
       memberNames: { [currentUser.uid]: currentUser.displayName },
@@ -55,5 +57,18 @@ export function useGroups() {
     });
   }
 
-  return { groups, loading, createGroup, joinGroup };
+  async function leaveGroup(groupId) {
+    const groupRef = doc(db, "groups", groupId);
+    await updateDoc(groupRef, {
+      members: arrayRemove(currentUser.uid),
+      [`memberNames.${currentUser.uid}`]: null,
+    });
+  }
+
+  async function updateGroupColor(groupId, color) {
+    const groupRef = doc(db, "groups", groupId);
+    await updateDoc(groupRef, { color });
+  }
+
+  return { groups, loading, createGroup, joinGroup, leaveGroup, updateGroupColor };
 }
