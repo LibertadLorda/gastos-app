@@ -55,30 +55,30 @@ export default function Dashboard() {
   if (selectedGroup) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSelectedGroup(null)}
-              className="text-indigo-600 font-semibold text-sm"
+              className="text-indigo-600 font-semibold text-sm shrink-0"
             >
               ← Volver
             </button>
-            <span className="font-bold text-gray-800">{selectedGroup.name}</span>
+            <span className="font-bold text-gray-800 truncate">{selectedGroup.name}</span>
           </div>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 shrink-0 ml-2">
             {selectedGroup.members.length} miembros
           </span>
         </header>
 
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex border-b border-gray-200 mb-4">
+        <div className="max-w-lg mx-auto">
+          <div className="flex border-b border-gray-200 bg-white sticky top-[61px] z-10">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
-                  ? "border-b-2 border-indigo-600 text-indigo-600"
-                  : "text-gray-400 hover:text-gray-600"
+                    ? "border-b-2 border-indigo-600 text-indigo-600"
+                    : "text-gray-400 hover:text-gray-600"
                   }`}
               >
                 {tab.label}
@@ -86,7 +86,7 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <div className="pb-8">
+          <div className="p-4 pb-10">
             {activeTab === "expenses" && <ExpenseTab group={selectedGroup} />}
             {activeTab === "balance" && <BalanceTab group={selectedGroup} />}
             {activeTab === "shopping" && <ShoppingTab group={selectedGroup} />}
@@ -98,13 +98,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between">
+      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <span className="text-2xl">💸</span>
           <span className="font-bold text-gray-800 text-lg">GastosApp</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{currentUser.displayName}</span>
+          <span className="text-sm text-gray-500 hidden sm:block">{currentUser.displayName}</span>
           <button
             onClick={logout}
             className="text-sm text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
@@ -114,14 +114,14 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto p-4 space-y-4">
+      <main className="max-w-lg mx-auto p-4 space-y-4">
         {error && (
           <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
             <h3 className="font-semibold text-gray-700 mb-3">Crear grupo</h3>
             <form onSubmit={handleCreate} className="flex flex-col gap-2">
@@ -130,11 +130,11 @@ export default function Dashboard() {
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder="Nombre del grupo"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
               />
               <button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
               >
                 Crear
               </button>
@@ -149,11 +149,11 @@ export default function Dashboard() {
                 value={joinId}
                 onChange={(e) => setJoinId(e.target.value)}
                 placeholder="ID del grupo"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
               />
               <button
                 type="submit"
-                className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
               >
                 Unirse
               </button>
@@ -172,22 +172,22 @@ export default function Dashboard() {
               {groups.map((group) => (
                 <li
                   key={group.id}
-                  className="p-4 rounded-xl border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition-all"
+                  className="p-4 rounded-xl border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
                 >
                   <div
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between cursor-pointer"
                     onClick={() => setSelectedGroup(group)}
                   >
                     <p className="font-semibold text-gray-800">{group.name}</p>
-                    <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-1">
+                    <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-1 shrink-0 ml-2">
                       {group.members.length} {group.members.length === 1 ? "miembro" : "miembros"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-gray-400 font-mono">{group.id}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <p className="text-xs text-gray-400 font-mono truncate">{group.id}</p>
                     <button
                       onClick={(e) => handleCopy(e, group.id)}
-                      className={`text-xs font-medium transition-colors ${copiedId === group.id
+                      className={`text-xs font-medium shrink-0 transition-colors ${copiedId === group.id
                           ? "text-green-500"
                           : "text-indigo-500 hover:text-indigo-700"
                         }`}

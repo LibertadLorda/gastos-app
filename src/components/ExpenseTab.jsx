@@ -46,6 +46,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
     <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
       <form onSubmit={handleSubmit} className="space-y-3">
         {error && <p className="text-red-500 text-sm">{error}</p>}
+
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
           <input
@@ -54,10 +55,11 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
             onChange={(e) => setDescription(e.target.value)}
             required
             placeholder="Ej: Cena del viernes"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Importe (€)</label>
             <input
@@ -68,7 +70,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
               min="0.01"
               step="0.01"
               placeholder="0.00"
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
             />
           </div>
           <div>
@@ -76,7 +78,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm bg-white"
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm bg-white"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -92,7 +94,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             max={today}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
           />
         </div>
 
@@ -151,7 +153,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+            className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-colors bg-white"
           >
             Cancelar
           </button>
@@ -217,15 +219,13 @@ export default function ExpenseTab({ group }) {
         />
       )}
 
-      <div>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar gasto..."
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-        />
-      </div>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Buscar gasto..."
+        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+      />
 
       {loading ? (
         <p className="text-gray-400 text-sm">Cargando...</p>
@@ -248,7 +248,7 @@ export default function ExpenseTab({ group }) {
                 />
               ) : (
                 <div className="p-4 rounded-xl border bg-white border-gray-100">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-sm">{expense.description}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -265,7 +265,7 @@ export default function ExpenseTab({ group }) {
                         </p>
                       )}
                     </div>
-                    <div className="text-right ml-3 shrink-0">
+                    <div className="text-right shrink-0">
                       <p className="font-bold text-gray-800">{expense.amount.toFixed(2)}€</p>
                       {expense.paidBy === currentUser.uid && (
                         <div className="flex gap-2 justify-end mt-1">
@@ -291,13 +291,13 @@ export default function ExpenseTab({ group }) {
                       <p className="text-xs text-red-600 flex-1">¿Seguro que quieres borrar este gasto?</p>
                       <button
                         onClick={() => handleDelete(expense.id)}
-                        className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                        className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0"
                       >
                         Borrar
                       </button>
                       <button
                         onClick={() => setConfirmDelete(null)}
-                        className="text-xs text-gray-400 hover:text-gray-600"
+                        className="text-xs text-gray-400 hover:text-gray-600 shrink-0"
                       >
                         Cancelar
                       </button>

@@ -91,32 +91,35 @@ export default function BalanceTab({ group }) {
                         </button>
                       </div>
                     </div>
-
                     {payingTo && payingTo.to === b.to && (
-                      <div className="mt-2 flex gap-2 items-center">
-                        <input
-                          type="number"
-                          value={payAmount}
-                          onChange={(e) => setPayAmount(e.target.value)}
-                          min="0.01"
-                          step="0.01"
-                          max={b.amount.toFixed(2)}
-                          className="w-28 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-                        />
-                        <span className="text-sm text-gray-400">€</span>
-                        <button
-                          onClick={() => handlePay(b)}
-                          disabled={saving}
-                          className="text-xs bg-green-500 hover:bg-green-600 disabled:opacity-60 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          {saving ? "..." : "Confirmar"}
-                        </button>
-                        <button
-                          onClick={() => setPayingTo(null)}
-                          className="text-xs text-gray-400 hover:text-gray-600"
-                        >
-                          Cancelar
-                        </button>
+                      <div className="mt-2 flex flex-wrap gap-2 items-center">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={payAmount}
+                            onChange={(e) => setPayAmount(e.target.value)}
+                            min="0.01"
+                            step="0.01"
+                            max={b.amount.toFixed(2)}
+                            className="w-24 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                          />
+                          <span className="text-sm text-gray-400">€</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handlePay(b)}
+                            disabled={saving}
+                            className="text-xs bg-green-500 hover:bg-green-600 disabled:opacity-60 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            {saving ? "..." : "Confirmar"}
+                          </button>
+                          <button
+                            onClick={() => setPayingTo(null)}
+                            className="text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
                     )}
                   </li>
