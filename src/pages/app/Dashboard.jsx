@@ -5,11 +5,13 @@ import ExpenseTab from "../../components/ExpenseTab";
 import BalanceTab from "../../components/BalanceTab";
 import ShoppingTab from "../../components/ShoppingTab";
 import Profile from "./Profile";
+import SummaryTab from "../../components/SummaryTab";
 
 const TABS = [
   { id: "expenses", label: "💸 Gastos" },
   { id: "balance", label: "⚖️ Balance" },
   { id: "shopping", label: "🛒 Lista" },
+  { id: "summary", label: "📊 Resumen" },
 ];
 
 const GROUP_COLORS = [
@@ -208,6 +210,7 @@ export default function Dashboard() {
             {activeTab === "expenses" && <ExpenseTab group={selectedGroup} />}
             {activeTab === "balance" && <BalanceTab group={selectedGroup} />}
             {activeTab === "shopping" && <ShoppingTab group={selectedGroup} />}
+            {activeTab === "summary" && <SummaryTab group={selectedGroup} />}
           </div>
         </div>
       </div>
