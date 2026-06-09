@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useGroups } from "../../hooks/useGroups";
 import { useAuth } from "../../hooks/useAuth";
+import { setLastVisit } from "../../hooks/useLastVisit";
+import { useNewExpenses } from "../../hooks/useNewExpenses";
 import ExpenseTab from "../../components/ExpenseTab";
 import BalanceTab from "../../components/BalanceTab";
 import ShoppingTab from "../../components/ShoppingTab";
 import SummaryTab from "../../components/SummaryTab";
 import Profile from "./Profile";
-import { setLastVisit } from "../../hooks/useLastVisit";
-import { useNewExpenses } from "../../hooks/useNewExpenses";
 
 const TABS = [
   { id: "expenses", label: "💸 Gastos" },
@@ -117,12 +117,20 @@ export default function Dashboard() {
             </button>
             <span className="font-bold text-white truncate">{selectedGroup.name}</span>
           </div>
-          <button
-            onClick={() => setShowMembers(!showMembers)}
-            className="text-white text-xs font-medium bg-white/20 rounded-full px-3 py-1 shrink-0 ml-2"
-          >
-            {selectedGroup.members.length} miembros
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            <button
+              onClick={() => setShowMembers(!showMembers)}
+              className="text-white text-xs font-medium bg-white/20 rounded-full px-3 py-1"
+            >
+              {selectedGroup.members.length} miembros
+            </button>
+            <button
+              onClick={logout}
+              className="text-white text-xs font-medium bg-white/20 rounded-full px-3 py-1"
+            >
+              Salir
+            </button>
+          </div>
         </header>
 
         {showMembers && (
@@ -156,10 +164,11 @@ export default function Dashboard() {
                   <button
                     key={color}
                     onClick={() => handleColorChange(color)}
-                    className={`w-7 h-7 rounded-full transition-transform ${(selectedGroup.color || "#4f46e5") === color
+                    className={`w-7 h-7 rounded-full transition-transform ${
+                      (selectedGroup.color || "#4f46e5") === color
                         ? "scale-125 ring-2 ring-offset-1 ring-gray-400"
                         : ""
-                      }`}
+                    }`}
                     style={{ backgroundColor: color }}
                   />
                 ))}
@@ -201,10 +210,11 @@ export default function Dashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
+                className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
                     ? "border-b-2 text-indigo-600"
                     : "text-gray-400 hover:text-gray-600"
-                  }`}
+                }`}
                 style={
                   activeTab === tab.id
                     ? { borderBottomColor: selectedGroup.color || "#4f46e5" }
@@ -282,10 +292,11 @@ export default function Dashboard() {
                   key={color}
                   type="button"
                   onClick={() => setNewGroupColor(color)}
-                  className={`w-6 h-6 rounded-full transition-transform ${newGroupColor === color
+                  className={`w-6 h-6 rounded-full transition-transform ${
+                    newGroupColor === color
                       ? "scale-125 ring-2 ring-offset-1 ring-gray-400"
                       : ""
-                    }`}
+                  }`}
                   style={{ backgroundColor: color }}
                 />
               ))}
@@ -352,10 +363,11 @@ export default function Dashboard() {
                     <p className="text-xs text-gray-400 font-mono truncate">{group.id}</p>
                     <button
                       onClick={(e) => handleCopy(e, group.id)}
-                      className={`text-xs font-medium shrink-0 transition-colors ${copiedId === group.id
+                      className={`text-xs font-medium shrink-0 transition-colors ${
+                        copiedId === group.id
                           ? "text-green-500"
                           : "text-indigo-500 hover:text-indigo-700"
-                        }`}
+                      }`}
                     >
                       {copiedId === group.id ? "¡Copiado!" : "Copiar ID"}
                     </button>

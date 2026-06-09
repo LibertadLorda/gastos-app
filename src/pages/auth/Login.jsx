@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase/config";
 
 export default function Login() {
   const { login } = useAuth();
@@ -9,6 +11,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,6 +27,22 @@ export default function Login() {
     setLoading(false);
   }
 
+  async function handleReset() {
+    if (!email.trim()) {
+      setError("Introduce tu email primero");
+      return;
+    }
+    setResetLoading(true);
+    setError("");
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch {
+      setError("No se encontró ninguna cuenta con ese email");
+    }
+    setResetLoading(false);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
@@ -35,6 +55,12 @@ export default function Login() {
         {error && (
           <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mb-4">
             {error}
+          </div>
+        )}
+
+        {resetSent && (
+          <div className="bg-green-50 text-green-600 text-sm rounded-lg px-4 py-3 mb-4">
+            Te hemos enviado un email para restablecer tu contraseña
           </div>
         )}
 
@@ -70,7 +96,15 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <button
+          onClick={handleReset}
+          disabled={resetLoading}
+          className="w-full text-center text-sm text-indigo-500 hover:text-indigo-700 mt-3 disabled:opacity-60"
+        >
+          {resetLoading ? "Enviando..." : "¿Olvidaste tu contraseña?"}
+        </button>
+
+        <p className="text-center text-sm text-gray-500 mt-4">
           ¿No tienes cuenta?{" "}
           <Link to="/register" className="text-indigo-600 font-semibold hover:underline">
             Regístrate

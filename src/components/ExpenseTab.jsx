@@ -5,7 +5,7 @@ import { formatDate, formatSimpleDate } from "../utils/formatDate";
 import { getLastVisit } from "../hooks/useLastVisit";
 
 const CATEGORIES = [
-  "Comida", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Otros"
+  "Comida por ahí", "Gasolina","Transporte", "Alojamiento", "Ocio", "Supermercado", "Compras", "Otros"
 ];
 
 function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
