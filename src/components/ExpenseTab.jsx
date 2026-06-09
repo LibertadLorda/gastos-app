@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useExpenses } from "../hooks/useExpenses";
 import { useAuth } from "../hooks/useAuth";
 import { formatDate, formatSimpleDate } from "../utils/formatDate";
+import { getLastVisit } from "../hooks/useLastVisit";
 
 const CATEGORIES = [
   "Comida", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Otros"
@@ -168,13 +169,33 @@ export default function ExpenseTab({ group }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(null);
   const [sortBy, setSortBy] = useState("date-desc");
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const today = new Date().toISOString().split("T")[0];
 
-  const filtered = expenses.filter((e) =>
-    e.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const lastVisit = getLastVisit(group.id);
+
+  function isNew(expense) {
+    if (expense.paidBy === currentUser.uid) return false;
+    const createdAt = expense.createdAt?.toDate?.();
+    if (!createdAt) return false;
+    if (!lastVisit) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return createdAt > sevenDaysAgo;
+    }
+    return createdAt > lastVisit;
+  }
+
+  function getMemberName(uid) {
+    return group.memberNames[uid] || uid;
+  }
+
+  const filtered = expenses.filter((e) => {
+    const isVisible = e.paidBy === currentUser.uid ||
+      (e.isShared && e.sharedWith?.includes(currentUser.uid));
+    return isVisible && e.description.toLowerCase().includes(search.toLowerCase());
+  });
 
   const filteredAndSorted = [...filtered].sort((a, b) => {
     switch (sortBy) {
@@ -212,10 +233,6 @@ export default function ExpenseTab({ group }) {
     setConfirmDelete(null);
   }
 
-  function getMemberName(uid) {
-    return group.memberNames[uid] || uid;
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -240,29 +257,38 @@ export default function ExpenseTab({ group }) {
         />
       )}
 
-      <div className="flex gap-2">
+      <div className="space-y-2">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar gasto..."
-          className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
         />
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="px-2 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm bg-white text-gray-600"
-        >
-          <option value="date-desc">Fecha ↓</option>
-          <option value="date-asc">Fecha ↑</option>
-          <option value="amount-desc">Importe ↓</option>
-          <option value="amount-asc">Importe ↑</option>
-        </select>
+        <div className="flex gap-2">
+          {[
+            { value: "date-desc", label: "Fecha ↓" },
+            { value: "date-asc", label: "Fecha ↑" },
+            { value: "amount-desc", label: "Mayor €" },
+            { value: "amount-asc", label: "Menor €" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setSortBy(option.value)}
+              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sortBy === option.value
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+                }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <p className="text-gray-400 text-sm">Cargando...</p>
-      ) : filtered.length === 0 ? (
+      ) : filteredAndSorted.length === 0 ? (
         <p className="text-gray-400 text-sm italic">
           {search ? "No hay resultados" : "No hay gastos todavía"}
         </p>
@@ -280,10 +306,20 @@ export default function ExpenseTab({ group }) {
                   onCancel={() => setEditingId(null)}
                 />
               ) : (
-                <div className="p-4 rounded-xl border bg-white border-gray-100">
+                <div className={`p-4 rounded-xl border ${isNew(expense)
+                  ? "bg-indigo-50 border-indigo-200"
+                  : "bg-white border-gray-100"
+                  }`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 text-sm">{expense.description}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-800 text-sm">{expense.description}</p>
+                        {isNew(expense) && (
+                          <span className="text-xs bg-indigo-600 text-white rounded-full px-1.5 py-0.5 shrink-0">
+                            Nuevo
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {expense.paidByName} · {expense.category} ·{" "}
                         {expense.date ? formatSimpleDate(expense.date) : formatDate(expense.createdAt)}

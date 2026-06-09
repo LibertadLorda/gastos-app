@@ -4,8 +4,10 @@ import { useAuth } from "../../hooks/useAuth";
 import ExpenseTab from "../../components/ExpenseTab";
 import BalanceTab from "../../components/BalanceTab";
 import ShoppingTab from "../../components/ShoppingTab";
-import Profile from "./Profile";
 import SummaryTab from "../../components/SummaryTab";
+import Profile from "./Profile";
+import { setLastVisit } from "../../hooks/useLastVisit";
+import { useNewExpenses } from "../../hooks/useNewExpenses";
 
 const TABS = [
   { id: "expenses", label: "💸 Gastos" },
@@ -22,6 +24,7 @@ const GROUP_COLORS = [
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
   const { groups, loading, createGroup, joinGroup, leaveGroup, updateGroupColor } = useGroups();
+  const { newCounts } = useNewExpenses(groups, currentUser.uid);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupColor, setNewGroupColor] = useState("#4f46e5");
   const [joinId, setJoinId] = useState("");
@@ -32,6 +35,11 @@ export default function Dashboard() {
   const [showMembers, setShowMembers] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
+  function handleSelectGroup(group) {
+    setSelectedGroup(group);
+    setActiveTab("expenses");
+  }
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -83,6 +91,7 @@ export default function Dashboard() {
     setCopiedId(groupId);
     setTimeout(() => setCopiedId(null), 2000);
   }
+
   if (showProfile) {
     return <Profile onBack={() => setShowProfile(false)} />;
   }
@@ -97,6 +106,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => {
+                setLastVisit(selectedGroup.id);
                 setSelectedGroup(null);
                 setShowMembers(false);
                 setConfirmLeave(false);
@@ -147,8 +157,8 @@ export default function Dashboard() {
                     key={color}
                     onClick={() => handleColorChange(color)}
                     className={`w-7 h-7 rounded-full transition-transform ${(selectedGroup.color || "#4f46e5") === color
-                      ? "scale-125 ring-2 ring-offset-1 ring-gray-400"
-                      : ""
+                        ? "scale-125 ring-2 ring-offset-1 ring-gray-400"
+                        : ""
                       }`}
                     style={{ backgroundColor: color }}
                   />
@@ -192,8 +202,8 @@ export default function Dashboard() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
-                  ? "border-b-2 text-indigo-600"
-                  : "text-gray-400 hover:text-gray-600"
+                    ? "border-b-2 text-indigo-600"
+                    : "text-gray-400 hover:text-gray-600"
                   }`}
                 style={
                   activeTab === tab.id
@@ -273,8 +283,8 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => setNewGroupColor(color)}
                   className={`w-6 h-6 rounded-full transition-transform ${newGroupColor === color
-                    ? "scale-125 ring-2 ring-offset-1 ring-gray-400"
-                    : ""
+                      ? "scale-125 ring-2 ring-offset-1 ring-gray-400"
+                      : ""
                     }`}
                   style={{ backgroundColor: color }}
                 />
@@ -317,7 +327,7 @@ export default function Dashboard() {
                 >
                   <div
                     className="flex items-center justify-between cursor-pointer"
-                    onClick={() => setSelectedGroup(group)}
+                    onClick={() => handleSelectGroup(group)}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div
@@ -325,6 +335,14 @@ export default function Dashboard() {
                         style={{ backgroundColor: group.color || "#4f46e5" }}
                       />
                       <p className="font-semibold text-gray-800 text-sm truncate">{group.name}</p>
+                      {newCounts[group.id] > 0 && (
+                        <span
+                          className="text-xs text-white font-bold rounded-full px-1.5 py-0.5 shrink-0"
+                          style={{ backgroundColor: group.color || "#4f46e5" }}
+                        >
+                          {newCounts[group.id]}
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-1 shrink-0 ml-2">
                       {group.members.length} {group.members.length === 1 ? "miembro" : "miembros"}
@@ -335,8 +353,8 @@ export default function Dashboard() {
                     <button
                       onClick={(e) => handleCopy(e, group.id)}
                       className={`text-xs font-medium shrink-0 transition-colors ${copiedId === group.id
-                        ? "text-green-500"
-                        : "text-indigo-500 hover:text-indigo-700"
+                          ? "text-green-500"
+                          : "text-indigo-500 hover:text-indigo-700"
                         }`}
                     >
                       {copiedId === group.id ? "¡Copiado!" : "Copiar ID"}
