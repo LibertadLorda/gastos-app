@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useExpenses } from "../hooks/useExpenses";
 import { useAuth } from "../hooks/useAuth";
+import { useActivity } from "../hooks/useActivity";
 import { formatDate, formatSimpleDate } from "../utils/formatDate";
 import { getLastVisit } from "../hooks/useLastVisit";
-import { useActivity } from "../hooks/useActivity";
 
 const CATEGORIES = [
   "Comida", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Compras", "Otros"
@@ -15,13 +15,16 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
   const [category, setCategory] = useState(initial?.category || "Otros");
   const [isShared, setIsShared] = useState(initial?.isShared ?? true);
   const [sharedWith, setSharedWith] = useState(
-    initial?.sharedWith || Object.keys(group.memberNames)
+    initial?.sharedWith || Object.keys(group.memberNames).filter((uid) => group.memberNames[uid])
   );
   const [date, setDate] = useState(initial?.date || today);
   const [paidBy, setPaidBy] = useState(initial?.paidBy || currentUser.uid);
   const [paidByName, setPaidByName] = useState(initial?.paidByName || currentUser.displayName);
+  const [splitType, setSplitType] = useState(initial?.splitType || "equal");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const memberCount = Object.keys(group.memberNames).filter((uid) => group.memberNames[uid]).length;
 
   function toggleMember(uid) {
     setSharedWith((prev) =>
@@ -35,7 +38,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
     setSaving(true);
     setError("");
     try {
-      await onSave({ description, amount, category, isShared, sharedWith, date, paidBy, paidByName });
+      await onSave({ description, amount, category, isShared, sharedWith, date, paidBy, paidByName, splitType });
     } catch {
       setError("Error al guardar el gasto");
       setSaving(false);
@@ -110,11 +113,17 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
                   onClick={() => {
                     setPaidBy(uid);
                     setPaidByName(name);
+                    if (!initial) {
+                      setSharedWith(
+                        Object.keys(group.memberNames).filter((u) => group.memberNames[u])
+                      );
+                    }
                   }}
-                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${paidBy === uid
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                    paidBy === uid
                       ? "bg-indigo-600 text-white border-indigo-600"
                       : "bg-white text-gray-500 border-gray-200"
-                    }`}
+                  }`}
                 >
                   {uid === currentUser.uid ? "Yo" : name}
                 </button>
@@ -130,7 +139,9 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
             onChange={(e) => {
               setIsShared(e.target.checked);
               if (e.target.checked) {
-                setSharedWith(Object.keys(group.memberNames));
+                setSharedWith(
+                  Object.keys(group.memberNames).filter((uid) => group.memberNames[uid])
+                );
               } else {
                 setSharedWith([paidBy]);
               }
@@ -143,28 +154,61 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
         </div>
 
         {isShared && (
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Compartir con
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(group.memberNames)
-                .filter(([, name]) => name)
-                .map(([uid, name]) => (
-                  <button
-                    key={uid}
-                    type="button"
-                    onClick={() => toggleMember(uid)}
-                    className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sharedWith.includes(uid)
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : "bg-white text-gray-500 border-gray-200"
-                      }`}
-                  >
-                    {uid === currentUser.uid ? "Yo" : name}
-                  </button>
-                ))}
+          <>
+            {memberCount > 2 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Compartir con
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(group.memberNames)
+                    .filter(([, name]) => name)
+                    .map(([uid, name]) => (
+                      <button
+                        key={uid}
+                        type="button"
+                        onClick={() => toggleMember(uid)}
+                        className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                          sharedWith.includes(uid)
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-white text-gray-500 border-gray-200"
+                        }`}
+                      >
+                        {uid === currentUser.uid ? "Yo" : name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">¿Cómo se divide?</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSplitType("equal")}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                    splitType === "equal"
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-gray-500 border-gray-200"
+                  }`}
+                >
+                  A partes iguales
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSplitType("full")}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                    splitType === "full"
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-gray-500 border-gray-200"
+                  }`}
+                >
+                  Pago completo
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         <div className="flex gap-2">
@@ -191,6 +235,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
 export default function ExpenseTab({ group }) {
   const { currentUser } = useAuth();
   const { expenses, loading, addExpense, editExpense, deleteExpense } = useExpenses(group.id);
+  const { logActivity } = useActivity(group.id);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
@@ -199,7 +244,6 @@ export default function ExpenseTab({ group }) {
   const today = new Date().toISOString().split("T")[0];
 
   const lastVisit = getLastVisit(group.id);
-  const { logActivity } = useActivity(group.id);
 
   function isNew(expense) {
     if (expense.paidBy === currentUser.uid) return false;
@@ -218,8 +262,9 @@ export default function ExpenseTab({ group }) {
   }
 
   const filtered = expenses.filter((e) => {
-    const isVisible = e.paidBy === currentUser.uid ||
-      (e.isShared && e.sharedWith?.includes(currentUser.uid));
+    const isVisible =
+      e.paidBy === currentUser.uid ||
+      e.sharedWith?.includes(currentUser.uid);
     return isVisible && e.description.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -317,10 +362,11 @@ export default function ExpenseTab({ group }) {
             <button
               key={option.value}
               onClick={() => setSortBy(option.value)}
-              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sortBy === option.value
+              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                sortBy === option.value
                   ? "bg-indigo-600 text-white border-indigo-600"
                   : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
-                }`}
+              }`}
             >
               {option.label}
             </button>
@@ -348,10 +394,11 @@ export default function ExpenseTab({ group }) {
                   onCancel={() => setEditingId(null)}
                 />
               ) : (
-                <div className={`p-4 rounded-xl border ${isNew(expense)
+                <div className={`p-4 rounded-xl border ${
+                  isNew(expense)
                     ? "bg-indigo-50 border-indigo-200"
                     : "bg-white border-gray-100"
-                  }`}>
+                }`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -373,27 +420,26 @@ export default function ExpenseTab({ group }) {
                             .filter((uid) => uid !== expense.paidBy)
                             .map((uid) => getMemberName(uid))
                             .join(", ")}
+                          {expense.splitType === "full" && " · Pago completo"}
                         </p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-800">{expense.amount.toFixed(2)}€</p>
-                      {(
-                        <div className="flex gap-2 justify-end mt-1">
-                          <button
-                            onClick={() => setEditingId(expense.id)}
-                            className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => setConfirmDelete(expense.id)}
-                            className="text-xs text-red-400 hover:text-red-600 font-medium"
-                          >
-                            Borrar
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex gap-2 justify-end mt-1">
+                        <button
+                          onClick={() => setEditingId(expense.id)}
+                          className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(expense.id)}
+                          className="text-xs text-red-400 hover:text-red-600 font-medium"
+                        >
+                          Borrar
+                        </button>
+                      </div>
                     </div>
                   </div>
 

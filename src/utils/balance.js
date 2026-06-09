@@ -9,13 +9,18 @@ export function calculateBalances(expenses, payments) {
 
   expenses.forEach((expense) => {
     if (!expense.isShared) return;
-    const { paidBy, amount, sharedWith } = expense;
+    const { paidBy, amount, sharedWith, splitType } = expense;
     if (!sharedWith || sharedWith.length === 0) return;
 
-    const share = amount / sharedWith.length;
+    const others = sharedWith.filter((uid) => uid !== paidBy);
 
-    sharedWith.forEach((uid) => {
-      if (uid === paidBy) return;
+    if (others.length === 0) return;
+
+    others.forEach((uid) => {
+      const share = splitType === "full"
+        ? amount
+        : amount / sharedWith.length;
+
       const key = ensureKey(paidBy, uid);
       if (net[key].uids[0] === paidBy) {
         net[key].amount += share;

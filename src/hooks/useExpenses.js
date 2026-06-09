@@ -46,13 +46,14 @@ export function useExpenses(groupId) {
     };
   }, [groupId]);
 
-  async function addExpense({ description, amount, category, isShared, sharedWith, date, paidBy, paidByName }) {
+  async function addExpense({ description, amount, category, isShared, sharedWith, date, paidBy, paidByName, splitType }) {
     await addDoc(collection(db, "groups", groupId, "expenses"), {
       description,
       amount: parseFloat(amount),
       category,
       isShared,
       sharedWith: isShared ? sharedWith : [paidBy],
+      splitType: splitType || "equal",
       paidBy,
       paidByName,
       date,
@@ -60,7 +61,7 @@ export function useExpenses(groupId) {
     });
   }
 
-  async function editExpense(expenseId, { description, amount, category, isShared, sharedWith, date, paidBy, paidByName }) {
+  async function editExpense(expenseId, { description, amount, category, isShared, sharedWith, date, paidBy, paidByName, splitType }) {
     const ref = doc(db, "groups", groupId, "expenses", expenseId);
     await updateDoc(ref, {
       description,
@@ -68,6 +69,7 @@ export function useExpenses(groupId) {
       category,
       isShared,
       sharedWith: isShared ? sharedWith : [paidBy],
+      splitType: splitType || "equal",
       paidBy,
       paidByName,
       date,
