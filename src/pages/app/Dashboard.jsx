@@ -7,8 +7,9 @@ import ExpenseTab from "../../components/ExpenseTab";
 import BalanceTab from "../../components/BalanceTab";
 import ShoppingTab from "../../components/ShoppingTab";
 import SummaryTab from "../../components/SummaryTab";
-import Profile from "./Profile";
 import ActivityTab from "../../components/ActivityTab";
+import Profile from "./Profile";
+import WelcomeModal from "../../components/WelcomeModal";
 
 const TABS = [
   { id: "expenses", label: "💸 Gastos" },
@@ -37,6 +38,14 @@ export default function Dashboard() {
   const [showMembers, setShowMembers] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !localStorage.getItem(`welcomed_${currentUser.uid}`);
+  });
+
+  function handleCloseWelcome() {
+    localStorage.setItem(`welcomed_${currentUser.uid}`, "true");
+    setShowWelcome(false);
+  }
 
   function handleSelectGroup(group) {
     setSelectedGroup(group);
@@ -207,12 +216,12 @@ export default function Dashboard() {
         )}
 
         <div className="max-w-lg mx-auto">
-          <div className="flex border-b border-gray-200 bg-white sticky top-[49px] z-10">
+          <div className="flex border-b border-gray-200 bg-white sticky top-[49px] z-10 overflow-x-auto">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                className={`flex-1 py-3 text-xs font-medium transition-colors whitespace-nowrap px-1 ${
                   activeTab === tab.id
                     ? "border-b-2 text-indigo-600"
                     : "text-gray-400 hover:text-gray-600"
@@ -242,6 +251,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showWelcome && (
+        <WelcomeModal
+          name={currentUser.displayName}
+          onClose={handleCloseWelcome}
+        />
+      )}
+
       <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <span className="text-xl">💸</span>
