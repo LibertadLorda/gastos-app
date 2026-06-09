@@ -10,10 +10,8 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase/config";
-import { useAuth } from "./useAuth";
 
 export function useExpenses(groupId) {
-  const { currentUser } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,28 +46,30 @@ export function useExpenses(groupId) {
     };
   }, [groupId]);
 
-  async function addExpense({ description, amount, category, isShared, sharedWith, date }) {
+  async function addExpense({ description, amount, category, isShared, sharedWith, date, paidBy, paidByName }) {
     await addDoc(collection(db, "groups", groupId, "expenses"), {
       description,
       amount: parseFloat(amount),
       category,
       isShared,
-      sharedWith: isShared ? sharedWith : [currentUser.uid],
-      paidBy: currentUser.uid,
-      paidByName: currentUser.displayName,
+      sharedWith: isShared ? sharedWith : [paidBy],
+      paidBy,
+      paidByName,
       date,
       createdAt: new Date(),
     });
   }
 
-  async function editExpense(expenseId, { description, amount, category, isShared, sharedWith, date }) {
+  async function editExpense(expenseId, { description, amount, category, isShared, sharedWith, date, paidBy, paidByName }) {
     const ref = doc(db, "groups", groupId, "expenses", expenseId);
     await updateDoc(ref, {
       description,
       amount: parseFloat(amount),
       category,
       isShared,
-      sharedWith: isShared ? sharedWith : [],
+      sharedWith: isShared ? sharedWith : [paidBy],
+      paidBy,
+      paidByName,
       date,
     });
   }

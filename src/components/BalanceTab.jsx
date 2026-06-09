@@ -3,6 +3,7 @@ import { useExpenses } from "../hooks/useExpenses";
 import { useAuth } from "../hooks/useAuth";
 import { calculateBalances } from "../utils/balance";
 import { formatDate } from "../utils/formatDate";
+import { useActivity } from "../hooks/useActivity";
 
 export default function BalanceTab({ group }) {
   const { currentUser } = useAuth();
@@ -15,30 +16,36 @@ export default function BalanceTab({ group }) {
   const balances = calculateBalances(expenses, payments);
   const myDebts = balances.filter((b) => b.from === currentUser.uid);
   const owedToMe = balances.filter((b) => b.to === currentUser.uid);
+  const { logActivity } = useActivity(group.id);
 
   function getName(uid) {
     return group.memberNames[uid] || uid;
   }
 
-  async function handlePay(debt) {
-    if (!payAmount || parseFloat(payAmount) <= 0) return;
-    setSaving(true);
-    setError("");
-    try {
-      await registerPayment({
-        fromUid: currentUser.uid,
-        fromName: currentUser.displayName,
-        toUid: debt.to,
-        toName: getName(debt.to),
-        amount: parseFloat(payAmount),
-      });
-      setPayingTo(null);
-      setPayAmount("");
-    } catch {
-      setError("Error al registrar el pago");
-    }
-    setSaving(false);
+async function handlePay(debt) {
+  if (!payAmount || parseFloat(payAmount) <= 0) return;
+  setSaving(true);
+  setError("");
+  try {
+    await registerPayment({
+      fromUid: currentUser.uid,
+      fromName: currentUser.displayName,
+      toUid: debt.to,
+      toName: getName(debt.to),
+      amount: parseFloat(payAmount),
+    });
+    await logActivity({
+      type: "add_payment",
+      description: `Registró un pago de ${parseFloat(payAmount).toFixed(2)}€ a ${getName(debt.to)}`,
+      userName: currentUser.displayName,
+    });
+    setPayingTo(null);
+    setPayAmount("");
+  } catch {
+    setError("Error al registrar el pago");
   }
+  setSaving(false);
+}
 
   return (
     <div className="space-y-4">

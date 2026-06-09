@@ -3,9 +3,10 @@ import { useExpenses } from "../hooks/useExpenses";
 import { useAuth } from "../hooks/useAuth";
 import { formatDate, formatSimpleDate } from "../utils/formatDate";
 import { getLastVisit } from "../hooks/useLastVisit";
+import { useActivity } from "../hooks/useActivity";
 
 const CATEGORIES = [
-  "Restaurantes", "Gasolina", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Compras", "Otros"
+  "Comida", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Compras", "Otros"
 ];
 
 function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
@@ -17,12 +18,10 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
     initial?.sharedWith || Object.keys(group.memberNames)
   );
   const [date, setDate] = useState(initial?.date || today);
+  const [paidBy, setPaidBy] = useState(initial?.paidBy || currentUser.uid);
+  const [paidByName, setPaidByName] = useState(initial?.paidByName || currentUser.displayName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const otherMembers = Object.entries(group.memberNames).filter(
-    ([uid]) => uid !== currentUser.uid
-  );
 
   function toggleMember(uid) {
     setSharedWith((prev) =>
@@ -36,7 +35,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
     setSaving(true);
     setError("");
     try {
-      await onSave({ description, amount, category, isShared, sharedWith, date });
+      await onSave({ description, amount, category, isShared, sharedWith, date, paidBy, paidByName });
     } catch {
       setError("Error al guardar el gasto");
       setSaving(false);
@@ -99,6 +98,30 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
           />
         </div>
 
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">¿Quién pagó?</label>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(group.memberNames)
+              .filter(([, name]) => name)
+              .map(([uid, name]) => (
+                <button
+                  key={uid}
+                  type="button"
+                  onClick={() => {
+                    setPaidBy(uid);
+                    setPaidByName(name);
+                  }}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${paidBy === uid
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-gray-500 border-gray-200"
+                    }`}
+                >
+                  {uid === currentUser.uid ? "Yo" : name}
+                </button>
+              ))}
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -109,7 +132,7 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
               if (e.target.checked) {
                 setSharedWith(Object.keys(group.memberNames));
               } else {
-                setSharedWith([currentUser.uid]);
+                setSharedWith([paidBy]);
               }
             }}
             className="w-4 h-4 accent-indigo-600"
@@ -119,25 +142,27 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
           </label>
         </div>
 
-        {isShared && otherMembers.length > 0 && (
+        {isShared && (
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
               Compartir con
             </label>
             <div className="flex flex-wrap gap-2">
-              {otherMembers.map(([uid, name]) => (
-                <button
-                  key={uid}
-                  type="button"
-                  onClick={() => toggleMember(uid)}
-                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sharedWith.includes(uid)
-                    ? "bg-indigo-600 text-white border-indigo-600"
-                    : "bg-white text-gray-500 border-gray-200"
-                    }`}
-                >
-                  {name}
-                </button>
-              ))}
+              {Object.entries(group.memberNames)
+                .filter(([, name]) => name)
+                .map(([uid, name]) => (
+                  <button
+                    key={uid}
+                    type="button"
+                    onClick={() => toggleMember(uid)}
+                    className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sharedWith.includes(uid)
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-white text-gray-500 border-gray-200"
+                      }`}
+                  >
+                    {uid === currentUser.uid ? "Yo" : name}
+                  </button>
+                ))}
             </div>
           </div>
         )}
@@ -174,6 +199,7 @@ export default function ExpenseTab({ group }) {
   const today = new Date().toISOString().split("T")[0];
 
   const lastVisit = getLastVisit(group.id);
+  const { logActivity } = useActivity(group.id);
 
   function isNew(expense) {
     if (expense.paidBy === currentUser.uid) return false;
@@ -220,16 +246,32 @@ export default function ExpenseTab({ group }) {
 
   async function handleAdd(data) {
     await addExpense(data);
+    await logActivity({
+      type: "add_expense",
+      description: `Añadió el gasto "${data.description}" de ${parseFloat(data.amount).toFixed(2)}€`,
+      userName: currentUser.displayName,
+    });
     setShowForm(false);
   }
 
   async function handleEdit(expenseId, data) {
     await editExpense(expenseId, data);
+    await logActivity({
+      type: "edit_expense",
+      description: `Editó el gasto "${data.description}"`,
+      userName: currentUser.displayName,
+    });
     setEditingId(null);
   }
 
   async function handleDelete(expenseId) {
+    const expense = expenses.find((e) => e.id === expenseId);
     await deleteExpense(expenseId);
+    await logActivity({
+      type: "delete_expense",
+      description: `Eliminó el gasto "${expense?.description || ""}"`,
+      userName: currentUser.displayName,
+    });
     setConfirmDelete(null);
   }
 
@@ -276,8 +318,8 @@ export default function ExpenseTab({ group }) {
               key={option.value}
               onClick={() => setSortBy(option.value)}
               className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sortBy === option.value
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
                 }`}
             >
               {option.label}
@@ -307,8 +349,8 @@ export default function ExpenseTab({ group }) {
                 />
               ) : (
                 <div className={`p-4 rounded-xl border ${isNew(expense)
-                  ? "bg-indigo-50 border-indigo-200"
-                  : "bg-white border-gray-100"
+                    ? "bg-indigo-50 border-indigo-200"
+                    : "bg-white border-gray-100"
                   }`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -336,7 +378,7 @@ export default function ExpenseTab({ group }) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-800">{expense.amount.toFixed(2)}€</p>
-                      {expense.paidBy === currentUser.uid && (
+                      {(
                         <div className="flex gap-2 justify-end mt-1">
                           <button
                             onClick={() => setEditingId(expense.id)}
