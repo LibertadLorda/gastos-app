@@ -77,8 +77,8 @@ export default function Dashboard() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
-                    ? "border-b-2 border-indigo-600 text-indigo-600"
-                    : "text-gray-400 hover:text-gray-600"
+                  ? "border-b-2 border-indigo-600 text-indigo-600"
+                  : "text-gray-400 hover:text-gray-600"
                   }`}
               >
                 {tab.label}
@@ -98,12 +98,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">💸</span>
-          <span className="font-bold text-gray-800 text-lg">GastosApp</span>
+          <span className="text-xl">💸</span>
+          <span className="font-bold text-gray-800">GastosApp</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500 hidden sm:block">{currentUser.displayName}</span>
           <button
             onClick={logout}
@@ -114,55 +114,53 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto p-4 space-y-4">
+      <main className="max-w-lg mx-auto p-3 space-y-3">
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
+          <div className="bg-red-50 text-red-600 text-sm rounded-lg px-3 py-2">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
-          <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-            <h3 className="font-semibold text-gray-700 mb-3">Crear grupo</h3>
-            <form onSubmit={handleCreate} className="flex flex-col gap-2">
-              <input
-                type="text"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                placeholder="Nombre del grupo"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-              />
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
-              >
-                Crear
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-            <h3 className="font-semibold text-gray-700 mb-3">Unirse a grupo</h3>
-            <form onSubmit={handleJoin} className="flex flex-col gap-2">
-              <input
-                type="text"
-                value={joinId}
-                onChange={(e) => setJoinId(e.target.value)}
-                placeholder="ID del grupo"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-              />
-              <button
-                type="submit"
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
-              >
-                Unirse
-              </button>
-            </form>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <h3 className="font-semibold text-gray-700 text-sm mb-2">Crear grupo</h3>
+          <form onSubmit={handleCreate} className="flex gap-2">
+            <input
+              type="text"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="Nombre del grupo"
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            />
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
+            >
+              Crear
+            </button>
+          </form>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-          <h3 className="font-semibold text-gray-700 mb-4">Tus grupos</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <h3 className="font-semibold text-gray-700 text-sm mb-2">Unirse a grupo</h3>
+          <form onSubmit={handleJoin} className="flex gap-2">
+            <input
+              type="text"
+              value={joinId}
+              onChange={(e) => setJoinId(e.target.value)}
+              placeholder="ID del grupo"
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+            />
+            <button
+              type="submit"
+              className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
+            >
+              Unirse
+            </button>
+          </form>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <h3 className="font-semibold text-gray-700 text-sm mb-3">Tus grupos</h3>
           {loading ? (
             <p className="text-gray-400 text-sm">Cargando...</p>
           ) : groups.length === 0 ? (
@@ -172,18 +170,18 @@ export default function Dashboard() {
               {groups.map((group) => (
                 <li
                   key={group.id}
-                  className="p-4 rounded-xl border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
+                  className="p-3 rounded-xl border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
                 >
                   <div
                     className="flex items-center justify-between cursor-pointer"
                     onClick={() => setSelectedGroup(group)}
                   >
-                    <p className="font-semibold text-gray-800">{group.name}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{group.name}</p>
                     <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-1 shrink-0 ml-2">
                       {group.members.length} {group.members.length === 1 ? "miembro" : "miembros"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-2 mt-1">
                     <p className="text-xs text-gray-400 font-mono truncate">{group.id}</p>
                     <button
                       onClick={(e) => handleCopy(e, group.id)}
