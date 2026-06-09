@@ -129,11 +129,10 @@ function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
                   key={uid}
                   type="button"
                   onClick={() => toggleMember(uid)}
-                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                    sharedWith.includes(uid)
-                      ? "bg-indigo-600 text-white border-indigo-600"
-                      : "bg-white text-gray-500 border-gray-200"
-                  }`}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${sharedWith.includes(uid)
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-500 border-gray-200"
+                    }`}
                 >
                   {name}
                 </button>
@@ -170,11 +169,33 @@ export default function ExpenseTab({ group }) {
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [sortBy, setSortBy] = useState("date-desc");
   const today = new Date().toISOString().split("T")[0];
 
   const filtered = expenses.filter((e) =>
     e.description.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredAndSorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case "date-desc": {
+        const dateA = a.date || a.createdAt?.toDate?.()?.toISOString?.().split("T")[0] || "";
+        const dateB = b.date || b.createdAt?.toDate?.()?.toISOString?.().split("T")[0] || "";
+        return dateB.localeCompare(dateA);
+      }
+      case "date-asc": {
+        const dateA = a.date || a.createdAt?.toDate?.()?.toISOString?.().split("T")[0] || "";
+        const dateB = b.date || b.createdAt?.toDate?.()?.toISOString?.().split("T")[0] || "";
+        return dateA.localeCompare(dateB);
+      }
+      case "amount-desc":
+        return b.amount - a.amount;
+      case "amount-asc":
+        return a.amount - b.amount;
+      default:
+        return 0;
+    }
+  });
 
   async function handleAdd(data) {
     await addExpense(data);
@@ -219,13 +240,25 @@ export default function ExpenseTab({ group }) {
         />
       )}
 
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Buscar gasto..."
-        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar gasto..."
+          className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+        />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-2 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm bg-white text-gray-600"
+        >
+          <option value="date-desc">Fecha ↓</option>
+          <option value="date-asc">Fecha ↑</option>
+          <option value="amount-desc">Importe ↓</option>
+          <option value="amount-asc">Importe ↑</option>
+        </select>
+      </div>
 
       {loading ? (
         <p className="text-gray-400 text-sm">Cargando...</p>
@@ -235,7 +268,7 @@ export default function ExpenseTab({ group }) {
         </p>
       ) : (
         <ul className="space-y-2">
-          {filtered.map((expense) => (
+          {filteredAndSorted.map((expense) => (
             <li key={expense.id}>
               {editingId === expense.id ? (
                 <ExpenseForm
