@@ -6,7 +6,16 @@ import { formatDate, formatSimpleDate } from "../utils/formatDate";
 import { getLastVisit } from "../hooks/useLastVisit";
 
 const CATEGORIES = [
-  "Comida", "Transporte", "Alojamiento", "Ocio", "Supermercado", "Compras", "Otros"
+  "Comida",
+  "Supermercado",
+  "Gasolina",
+  "Alojamiento",
+  "Servicios",
+  "Salud",
+  "Ocio",
+  "Compras",
+  "Gatos",
+  "Otros",
 ];
 
 function ExpenseForm({ group, currentUser, today, onSave, onCancel, initial }) {
@@ -291,11 +300,16 @@ export default function ExpenseTab({ group }) {
 
   async function handleAdd(data) {
     await addExpense(data);
-    await logActivity({
-      type: "add_expense",
-      description: `Añadió el gasto "${data.description}" de ${parseFloat(data.amount).toFixed(2)}€`,
-      userName: currentUser.displayName,
-    });
+    try {
+      await logActivity({
+        type: "add_expense",
+        description: `Añadió el gasto "${data.description}" de ${parseFloat(data.amount).toFixed(2)}€`,
+        userName: currentUser.displayName,
+      });
+    } catch (e) {
+      // Don't block the UX if logging activity fails (e.g., permissions or index issues)
+      console.error("Failed to log activity:", e);
+    }
     setShowForm(false);
   }
 

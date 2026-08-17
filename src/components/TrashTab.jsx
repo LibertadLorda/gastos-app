@@ -6,11 +6,14 @@ import { formatSimpleDate } from "../utils/formatDate";
 
 const CATEGORY_COLORS = {
   Comida: "bg-green-100 text-green-700",
-  Transporte: "bg-blue-100 text-blue-700",
-  Alojamiento: "bg-purple-100 text-purple-700",
-  Ocio: "bg-yellow-100 text-yellow-700",
   Supermercado: "bg-emerald-100 text-emerald-700",
+  Gasolina: "bg-blue-100 text-blue-700",
+  Alojamiento: "bg-purple-100 text-purple-700",
+  Servicios: "bg-indigo-100 text-indigo-700",
+  Salud: "bg-rose-100 text-rose-700",
+  Ocio: "bg-yellow-100 text-yellow-700",
   Compras: "bg-pink-100 text-pink-700",
+  Gatos: "bg-stone-100 text-stone-700",
   Otros: "bg-gray-100 text-gray-600",
 };
 
