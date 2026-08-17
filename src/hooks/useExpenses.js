@@ -4,6 +4,7 @@ import {
   addDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   doc,
   updateDoc,
@@ -14,19 +15,33 @@ import { db } from "../firebase/config";
 export function useExpenses(groupId) {
   const [expenses, setExpenses] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [trash, setTrash] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!groupId) return;
 
+    // Expenses that are not deleted (deletedAt === null)
     const qExpenses = query(
       collection(db, "groups", groupId, "expenses"),
+      // only items with deletedAt explicitly null are considered "active"
+      // add index in Firestore if prompted
+      // Note: addExpense sets deletedAt: null for new documents
+      where("deletedAt", "==", null),
       orderBy("createdAt", "desc")
     );
 
+    // Payments listener
     const qPayments = query(
       collection(db, "groups", groupId, "payments"),
       orderBy("createdAt", "desc")
+    );
+
+    // Trash: items with a deletedAt timestamp
+    const qTrash = query(
+      collection(db, "groups", groupId, "expenses"),
+      where("deletedAt", ">", new Date(0)),
+      orderBy("deletedAt", "desc")
     );
 
     const unsubExpenses = onSnapshot(qExpenses, (snapshot) => {
@@ -40,9 +55,15 @@ export function useExpenses(groupId) {
       setPayments(data);
     });
 
+    const unsubTrash = onSnapshot(qTrash, (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setTrash(data);
+    });
+
     return () => {
       unsubExpenses();
       unsubPayments();
+      unsubTrash();
     };
   }, [groupId]);
 
@@ -58,6 +79,7 @@ export function useExpenses(groupId) {
       paidByName,
       date,
       createdAt: new Date(),
+      deletedAt: null,
     });
   }
 
@@ -76,9 +98,26 @@ export function useExpenses(groupId) {
     });
   }
 
+  // Soft-delete: mark deletedAt so it moves to the trash
   async function deleteExpense(expenseId) {
     const ref = doc(db, "groups", groupId, "expenses", expenseId);
+    await updateDoc(ref, { deletedAt: new Date() });
+  }
+
+  async function restoreExpense(expenseId) {
+    const ref = doc(db, "groups", groupId, "expenses", expenseId);
+    await updateDoc(ref, { deletedAt: null });
+  }
+
+  async function permanentlyDeleteExpense(expenseId) {
+    const ref = doc(db, "groups", groupId, "expenses", expenseId);
     await deleteDoc(ref);
+  }
+
+  async function emptyTrash() {
+    // Delete each trashed document
+    const deletes = trash.map((t) => deleteDoc(doc(db, "groups", groupId, "expenses", t.id)));
+    await Promise.all(deletes);
   }
 
   async function registerPayment({ fromUid, fromName, toUid, toName, amount }) {
@@ -92,5 +131,5 @@ export function useExpenses(groupId) {
     });
   }
 
-  return { expenses, payments, loading, addExpense, editExpense, deleteExpense, registerPayment };
+  return { expenses, payments, trash, loading, addExpense, editExpense, deleteExpense, registerPayment, restoreExpense, permanentlyDeleteExpense, emptyTrash };
 }
