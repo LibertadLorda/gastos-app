@@ -4,7 +4,6 @@ import {
   addDoc,
   onSnapshot,
   query,
-  where,
   orderBy,
   doc,
   updateDoc,
@@ -21,32 +20,25 @@ export function useExpenses(groupId) {
   useEffect(() => {
     if (!groupId) return;
 
-    // Expenses that are not deleted (deletedAt === null)
-    const qExpenses = query(
+    // Listen all expenses and split client-side into active and trash.
+    // This avoids excluding documents that don't have deletedAt field and
+    // prevents requiring additional Firestore indexes.
+    const qAllExpenses = query(
       collection(db, "groups", groupId, "expenses"),
-      // only items with deletedAt explicitly null are considered "active"
-      // add index in Firestore if prompted
-      // Note: addExpense sets deletedAt: null for new documents
-      where("deletedAt", "==", null),
       orderBy("createdAt", "desc")
     );
 
-    // Payments listener
     const qPayments = query(
       collection(db, "groups", groupId, "payments"),
       orderBy("createdAt", "desc")
     );
 
-    // Trash: items with a deletedAt timestamp
-    const qTrash = query(
-      collection(db, "groups", groupId, "expenses"),
-      where("deletedAt", ">", new Date(0)),
-      orderBy("deletedAt", "desc")
-    );
-
-    const unsubExpenses = onSnapshot(qExpenses, (snapshot) => {
+    const unsubExpenses = onSnapshot(qAllExpenses, (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setExpenses(data);
+      // Consider an item trashed if deletedAt is present (truthy). It may be a
+      // Firestore Timestamp or JS Date string; checking existence is enough.
+      setTrash(data.filter((item) => !!item.deletedAt));
+      setExpenses(data.filter((item) => !item.deletedAt));
       setLoading(false);
     });
 
@@ -55,15 +47,9 @@ export function useExpenses(groupId) {
       setPayments(data);
     });
 
-    const unsubTrash = onSnapshot(qTrash, (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setTrash(data);
-    });
-
     return () => {
       unsubExpenses();
       unsubPayments();
-      unsubTrash();
     };
   }, [groupId]);
 
